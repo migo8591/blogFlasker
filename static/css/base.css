@@ -1,0 +1,30 @@
+body{
+    background: #8fdbe6;
+}
+.image-container-primary{
+    display: flex;
+    flex-direction: row;
+    justify-content: center; /* Centrar horizontalmente */
+    align-items: center;
+    /*align-items: baseline; Centrar verticalmente */
+    height: 100vh; /* Opcional: Asegura que el contenedor ocupe al menos el 100% de la altura de la ventana */
+
+}
+.image-container-secondary{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+
+}
+.image-container-secondary{
+    display: flex;
+    align-self: flex-start;
+}
+.image-container img {
+    max-width: 100%; /* Asegura que la imagen no exceda el ancho del contenedor */
+    max-height: 100%; /* Asegura que la imagen no exceda la altura del contenedor */
+  }
+#demo{
+    display: block;
+}
