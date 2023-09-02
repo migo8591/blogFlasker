@@ -2,10 +2,47 @@ from flask import Flask, render_template, flash
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
+#https://youtu.be/Q2QmST-cSwc?list=PLCC34OHNcOtolz2Vd9ZSeSXWc8Bq23yEz&t=1242
+db = SQLAlchemy()
 app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
 app.config['SECRET_KEY']="mySuperSecretKey"
+db.init_app(app)
+#Create model:
+class Users(db.Model):
+    id=db.Column(db.Integer, primary_key=True )
+    name=db.Column(db.String(200), nullable=False)
+    email=db.Column(db.String(120), nullable=False, unique=True)
+    date_added=db.Column(db.DateTime, default=datetime.utcnow)
+    # Create a string
+    def __repr__(self):
+        return '<Name %r>' % self.name
+with app.app_context():
+    db.create_all()
 #Create a form Class:
+class UserForm(FlaskForm):
+    name=StringField("Name", validators=[DataRequired()])
+    email=StringField("Email", validators=[DataRequired()])
+    submit=SubmitField("Submit") 
+@app.route('/add_user', methods=['GET','POST'])
+def add_user():
+    name=None
+    formulario=UserForm()
+    if formulario.validate_on_submit():
+        user=Users.query.filter_by(email=formulario.email.data).first() 
+        if user is None:
+            user=Users(name=formulario.name.data, email=formulario.email.data)
+            db.session.add(user)
+            db.session.commit()
+        name=formulario.name.data
+        formulario.name.data=''    
+        formulario.email.data='' 
+        flash("User added successfully!")     
+    our_users=Users.query.order_by(Users.date_added)
+    return render_template("add_user.html",form=formulario, name=name, our_users=our_users )
 class NamerForm(FlaskForm):
     name=StringField("what's your name", validators=[DataRequired()])
     submit=SubmitField("Submit") 
@@ -26,6 +63,7 @@ def name():
         form.name.data=''
         flash("Form Submitted Successfully!")
     return render_template("name.html", name=name, form=form)
+
 #Create Custom Error Pages
 #Invalid URL
 @app.errorhandler(404)
