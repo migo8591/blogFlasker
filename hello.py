@@ -5,12 +5,12 @@ from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-#https://youtu.be/Q2QmST-cSwc?list=PLCC34OHNcOtolz2Vd9ZSeSXWc8Bq23yEz&t=1242
 db = SQLAlchemy()
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///users.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:rebHaraya314@localhost/our_users"
 app.config['SECRET_KEY']="mySuperSecretKey"
 db.init_app(app)
+
 #Create model:
 class Users(db.Model):
     id=db.Column(db.Integer, primary_key=True )
@@ -20,6 +20,12 @@ class Users(db.Model):
     # Create a string
     def __repr__(self):
         return '<Name %r>' % self.name
+    # The serialize method converts the object to a dictionary
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name
+        }
 with app.app_context():
     db.create_all()
 #Create a form Class:
