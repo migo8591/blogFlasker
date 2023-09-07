@@ -14,3 +14,8 @@ setInterval(()=>{
         titulo.style.color="red"
     }
 },2500)
+
+setTimeout(function(){
+    document.getElementById('flash-message').classList.remove('show');
+    document.getElementById('flash-message').classList.add('hidden');
+}, 3000); // Cambia 3000 a la cantidad de milisegundos que desees
