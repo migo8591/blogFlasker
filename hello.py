@@ -1,10 +1,11 @@
 from flask import Flask, render_template, flash, request, redirect, url_for
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
+from wtforms.validators import DataRequired, EqualTo, Length
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 app = Flask(__name__)
@@ -20,6 +21,18 @@ class Users(db.Model):
     email=db.Column(db.String(120), nullable=False, unique=True)
     favorite_color=db.Column(db.String(120))
     date_added=db.Column(db.DateTime, default=datetime.utcnow)
+    password_hash = db.Column(db.String(120))
+
+    @property 
+    def password(self):
+        raise AttributeError('Password is nota readable attribute!')
+    
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
     # Create a string
     def __repr__(self):
         return '<Name %r>' % self.name
@@ -37,31 +50,15 @@ class UserForm(FlaskForm):
     name=StringField("Name", validators=[DataRequired()])
     email=StringField("Email", validators=[DataRequired()])
     favorite_color=StringField("Favorite color")
+    password_hash= PasswordField("Password",validators=[DataRequired(), EqualTo('password_hash2', message='Password must mathc!')])
+    password_hash2= PasswordField("Confirm password",validators=[DataRequired()])
     submit=SubmitField("Submit") 
-@app.route('/add_user', methods=['GET','POST'])
-def add_user():
-    name=None
-    formulario=UserForm()
-    if formulario.validate_on_submit():
-        user=Users.query.filter_by(email=formulario.email.data).first() 
-        if user is None:
-            user=Users(name=formulario.name.data, email=formulario.email.data, favorite_color=formulario.favorite_color.data)
-            db.session.add(user)
-            db.session.commit()
-        name=formulario.name.data
-        formulario.name.data=''    
-        formulario.email.data='' 
-        formulario.favorite_color.data='' 
-        flash("User added successfully!")     
-    our_users=Users.query.order_by(Users.date_added)
-    return render_template("add_user.html",form=formulario, name=name, our_users=our_users )
 class NamerForm(FlaskForm):
     name=StringField("what's your name", validators=[DataRequired()])
     submit=SubmitField("Submit") 
 @app.route('/')
 def index():
     return render_template("index.html")
-
 @app.route('/user/<name>')
 def user(name):
     return render_template("user.html", nombre=name)
@@ -75,6 +72,26 @@ def name():
         form.name.data=''
         flash("Form Submitted Successfully!")
     return render_template("name.html", name=name, form=form)
+@app.route('/add_user', methods=['GET','POST'])
+def add_user():
+    name=None
+    formulario=UserForm()
+    if formulario.validate_on_submit():
+        user=Users.query.filter_by(email=formulario.email.data).first() 
+        if user is None:
+            #Hash the password!!!
+            hashed_pw=generate_password_hash(formulario.password_hash.data, "sha256")
+            user=Users(name=formulario.name.data, email=formulario.email.data, favorite_color=formulario.favorite_color.data, password_hash=hashed_pw)
+            db.session.add(user)
+            db.session.commit()
+        name=formulario.name.data
+        formulario.name.data=''    
+        formulario.email.data='' 
+        formulario.favorite_color.data='' 
+        formulario.password_hash.data='' 
+        flash("User added successfully!")     
+    our_users=Users.query.order_by(Users.date_added)
+    return render_template("add_user.html",form=formulario, name=name, our_users=our_users )
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
 def update(id):
     form = UserForm()
@@ -93,7 +110,22 @@ def update(id):
             return render_template("update.html", form=form, name_to_update=name_to_update)
     else:
             print(name_to_update)
-            return render_template("update.html", form=form, name_to_update=name_to_update)
+            return render_template("update.html", form=form, name_to_update=name_to_update, identificator=id)
+@app.route('/delete/<int:id>')
+def delete(id):
+    user_to_delete = Users.query.get_or_404(id)
+    name = None
+    formulario = UserForm()
+    try:
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash("User deleted successfully")
+        our_users=Users.query.order_by(Users.date_added)
+        return render_template("add_user.html",form=formulario, name=name, our_users=our_users )
+    except:
+        flash("Whoop! There was a problem deleting user, try again..")
+        return render_template("add_user.html",form=formulario, name=name, our_users=our_users )
+
 
 #Create Custom Error Pages
 #Invalid URL
@@ -111,6 +143,6 @@ def page_not_found(e):
 """
 Validators: DataRequired, email, EqualTo, InputRequired, IPAddress, Length, MacAddress, NumberRange, Optional, Regexp, UUID (numero de identificación de usuario únicof), AnyOf, NoneOf
 """
-
-
+#video 15
+#https://youtu.be/FYsPj40aQoc?list=PLCC34OHNcOtolz2Vd9ZSeSXWc8Bq23yEz
 #revise: https://www.bogotobogo.com/python/Flask/Python_Flask_Blog_App_with_MongoDB.php
