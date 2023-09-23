@@ -1,0 +1,38 @@
+{% extends 'base.html' %} 
+{% include 'navbar.html' %}
+{% block content %}
+
+{% for message in get_flashed_messages() %}
+
+<div class="alert alert-success alert-dismissible fade show" role="alert" id="flash-message">
+    {{ message }}
+    <!-- <button type="button" class="  btn-close" data-bs-dismiss="alert" aria-label="Close"></button> -->
+    <script>
+        setTimeout(function () {
+            document.getElementById('flash-message').classList.remove('show');
+        }, 3000); // Cambia 3000 a la cantidad de milisegundos que desees
+        document.getElementById('flash-message').classList.add('hidden');
+
+        const flashMessage = document.getElementById('flash-message');
+
+        flashMessage.addEventListener('transitionend', () => {
+            // flashMessage.classList.remove('show');
+            flashMessage.classList.add('hidden');
+        });
+
+    </script>
+</div>
+{% endfor %}
+<h1>Blog Posts...</h1>
+{% for post in posts %}
+<div class="shadow p-3 mb-5 bg-body rounded">
+        <h2><a href="{{url_for('post', id=post.id)}}">{{ post.title}}</a></h2>
+        <small>By: {{ post.author}}</small> <br>
+        <small>{{ post.date_posted}} | {{ post.slug}} </small><br>
+        <p>{{ post.content}}</p>
+        <br>
+
+</div>
+    {% endfor%}
+
+{% endblock %}
