@@ -14,7 +14,7 @@
                     <a class="nav-link" href="{{url_for('name')}}">Name</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{url_for('add_user')}}">Add user</a>
+                    <a class="nav-link" href="{{url_for('dashboard')}}">Dashboard</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{{url_for('addPost')}}">Add Blog</a>
@@ -22,6 +22,20 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{url_for('posts')}}">Posts</a>
                 </li>
+                {% if current_user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{url_for('logout')}}">Logout</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{url_for('add_user')}}">
+                        Register
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{url_for('login')}}">Login</a>
+                </li>
+                {% endif %}
             </ul>
             <form class="d-flex my-2 my-lg-0">
                 <input class="form-control me-sm-2" type="text" placeholder="Search">

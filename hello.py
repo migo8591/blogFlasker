@@ -8,6 +8,7 @@ from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
 from wtforms.widgets import TextArea
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 
 db = SQLAlchemy()
 app = Flask(__name__)
@@ -15,6 +16,14 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:rebHaraya314@localhost/our
 app.config['SECRET_KEY']="mySuperSecretKey"
 db.init_app(app)
 migrate = Migrate(app, db)
+# Flask_Login Stuff
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.get(int(user_id))
 #json thing:
 @app.route('/date')
 def get_current_date():
@@ -27,8 +36,9 @@ def get_current_date():
     return favorite_pizza
 
 #**********Create model**********:
-class Users(db.Model):
+class Users(db.Model, UserMixin):
     id=db.Column(db.Integer, primary_key=True )
+    username = db.Column(db.String(20), nullable=False, unique=True)
     name=db.Column(db.String(200), nullable=False)
     email=db.Column(db.String(120), nullable=False, unique=True)
     favorite_color=db.Column(db.String(120))
@@ -68,6 +78,7 @@ with app.app_context():
 #******************Create a form Class*******************:
 class UserForm(FlaskForm):
     name=StringField("Name", validators=[DataRequired()])
+    username=StringField("Username", validators=[DataRequired()])
     email=StringField("Email", validators=[DataRequired()])
     favorite_color=StringField("Favorite color")
     password_hash= PasswordField("Password",validators=[DataRequired(), EqualTo('password_hash2', message='Password must mathc!')])
@@ -85,6 +96,10 @@ class PostForm(FlaskForm):
     content = StringField("Content", validators=[DataRequired()], widget=TextArea())
     author = StringField("Author", validators=[DataRequired()])
     slug = StringField("Slug", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+class LoginForm(FlaskForm):
+    username = StringField("Username", validators=[DataRequired()])
+    password = PasswordField("Password", validators=[DataRequired()])
     submit = SubmitField("Submit")
 #****************** Routes *******************:
 @app.route('/')
@@ -112,11 +127,12 @@ def add_user():
         if user is None:
             #Hash the password!!!
             hashed_pw=generate_password_hash(formulario.password_hash.data, "sha256")
-            user=Users(name=formulario.name.data, email=formulario.email.data, favorite_color=formulario.favorite_color.data, password_hash=hashed_pw)
+            user=Users(username=formulario.username.data,name=formulario.name.data, email=formulario.email.data, favorite_color=formulario.favorite_color.data, password_hash=hashed_pw)
             db.session.add(user)
             db.session.commit()
         name=formulario.name.data
         formulario.name.data=''    
+        formulario.username.data=''    
         formulario.email.data='' 
         formulario.favorite_color.data='' 
         formulario.password_hash.data='' 
@@ -209,13 +225,75 @@ def posts():
 @app.route('/posts/<int:id>')
 def post(id):
     post = Posts.query.get_or_404(id)
-    return render_template('post.html', post=post)
-
+    form = PostForm()
+    form.content.data=post.content
+    return render_template('post.html', post=post, form= form)
+@app.route('/post/edit/<int:id>', methods=['GET','POST'])
+def edit_post(id):
+    post = Posts.query.get_or_404(id)
+    form = PostForm()
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.author = form.author.data
+        post.slug = form.slug.data
+        post.content = form.content.data
+        # Update Database:
+        db.session.add(post)
+        db.session.commit()
+        flash("Post has been updated!")
+        return redirect(url_for('posts'))
+    form.title.data=post.title
+    form.author.data=post.author
+    form.slug.data=post.slug
+    form.content.data=post.content
+    return render_template('edit_post.html', form=form)
+@app.route('/posts/delete/<int:id>')
+def delete_post(id):
+    post_to_delete=Posts.query.get_or_404(id)
+    try:
+        db.session.delete(post_to_delete)
+        db.session.commit()
+        #Return a message
+        flash("Blog Post Was Deleted!")
+        #Grab all the posts from the databases:
+        posts = Posts.query.order_by(Posts.date_posted)
+        return render_template("posts.html", posts= posts)
+    except:  
+        flash("Whoops! There was a problem deleting post")      
+        #Grab all the posts from the databases:
+        posts = Posts.query.order_by(Posts.date_posted)
+        return render_template("posts.html", posts= posts)
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user=Users.query.filter_by(username=form.username.data).first()
+        if user:
+            #check the hash
+            if check_password_hash(user.password_hash, form.password.data):
+                login_user(user)
+                flash("Login Successfull!!")
+                return redirect(url_for('dashboard'))
+            else:
+                flash("Wrong Password - Try Again!")
+        else:
+            flash("That User Doesn't Exist! Try Again...")
+    return render_template('login.html', form=form)
+@app.route('/dashboard', methods=['GET', 'POST'])
+@login_required
+def dashboard():
+    return render_template('dashboard.html')
+@app.route('/logout', methods=['GET', 'POST'])
+def logout():
+    logout_user()
+    flash("You Have Been Logged Out! Thanks for stopping by...")
+    return redirect(url_for('login'))
 #git:
 #I_could_have_done_that}
 # BooleanField, DateField, DateTimeField, DecimalField, FileField, HiddenField, MultipleField, FieldList, FloatField, FormField, IntegerField, PassworldField, RadioField, SelectField, SelectMultipleField, SubmitField, StringField, TextAreaField 
 
 """
+see vrs watch: https://www.facebook.com/reel/699385911793089
 Validators: DataRequired, email, EqualTo, InputRequired, IPAddress, Length, MacAddress, NumberRange, Optional, Regexp, UUID (numero de identificación de usuario únicof), AnyOf, NoneOf
 """
 #video 15
@@ -223,6 +301,7 @@ Validators: DataRequired, email, EqualTo, InputRequired, IPAddress, Length, MacA
 #revise: https://www.bogotobogo.com/python/Flask/Python_Flask_Blog_App_with_MongoDB.php
 #visa diversity: https://www.ustraveldocs.com/cr/en/immigrant-visa/#kvisa
 """
+POO python freeCode: https://youtu.be/Ej_02ICOIgs
 accesibilidad web:
 https://www.linkedin.com/learning/desarrollo-web-accesible-esencial/que-es-la-accesibilidad-y-por-que-deberia-aplicarla?autoSkip=true&resume=false
 stay out of it = no te metas
@@ -239,4 +318,14 @@ better teacher: https://www.youtube.com/watch?v=qmyicviEZck
 better2: https://www.youtube.com/watch?v=0V0WeEnsec0
 in on at: https://www.youtube.com/watch?v=lEiWK6huZck
 pypal y nexjs: https://www.youtube.com/watch?v=ouqcQunk0fU
+evelina: 
+https://www.youtube.com/shorts/kdZhisSuxmY?t=17&feature=share
+TuTORIAL BOX-MODEL: 
+https://youtu.be/WfDqFArJnYA?t=4852
+inner:
+https://youtube.com/shorts/STtvuH6c_JI?si=pGOKpAUnun9shZkw
+
+
+        <h4 class="card-title">Wel</h4>
+
 """
