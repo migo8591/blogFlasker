@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block tittle %} Home {% endblock %}
+{% include 'navbar.html' %}
+{% block content %}
+    <h1>You are look for</h1>
+    {{searched}}
+    <br>
+    {% for post in posts %}
+       <a href="{{url_for('post', id=post.id)}}">{{post.title}}</a><br>
+    {% endfor %}
+{% endblock %}

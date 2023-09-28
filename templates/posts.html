@@ -29,7 +29,7 @@
                 <h2><a href="{{url_for('post', id=post.id)}}">{{ post.title}}</a></h2>
                 <small>By: {{ post.poster.name}}</small> <br>
                 <small>{{ post.date_posted}} | {{ post.slug}} </small><br>
-                <p>{{ post.content}}</p>
+                <p>{{ post.content|safe }}</p>
                 <br>
         </div>
     {% else %}

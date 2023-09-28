@@ -82,3 +82,7 @@ En esta plantilla, el campo TextAreaField del formulario permite la entrada de t
 
 Anne Hathaway: 
 https://youtube.com/shorts/US4WkhvNgTY?si=_HpFaWyy-fByCYn4
+
+"ya no se necesita un autor, ahora asociaremos estas publicaciones con el usuario. Necesitamos crear una clave externa para vincular a los usuarios y esta clave externa se referirá a la clave principal del usuario.
+
+Digamos que un usuario puede tener muchas publicaciones  asi que creamos una variable llamada publicaciones porque nuestro usuario.."

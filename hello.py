@@ -5,9 +5,12 @@ from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
-from webforms import LoginForm, PostForm, PasswordForm, NamerForm, UserForm  
+from webforms import LoginForm, PostForm, PasswordForm, NamerForm, UserForm, SearchForm 
+from flask_ckeditor import CKEditor
+
 db = SQLAlchemy()
 app = Flask(__name__)
+ckeditor = CKEditor(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:rebHaraya314@localhost/our_users"
 app.config['SECRET_KEY']="mySuperSecretKey"
 db.init_app(app)
@@ -76,6 +79,23 @@ class Posts(db.Model):
 with app.app_context():
     db.create_all()
 #****************** Routes *******************:
+# Pass Stuff To Navbar
+@app.context_processor
+def base():
+    form = SearchForm()
+    return dict(form=form)
+# Create Search Function
+@app.route('/search', methods=["POST"])
+def search():
+    form = SearchForm()
+    posts = Posts.query
+    if form.validate_on_submit():
+        #Get data from submitted from
+        post.searched = form.searched.data
+        #Query the Databases / tipo de concatenacion
+        posts = posts.filter(Posts.content.like('%'+post.searched+'%'))
+        posts = posts.order_by(Posts.title).all()
+        return render_template("search.html", form=form, searched=post.searched, posts = posts)
 @app.route('/')
 def index():
     return render_template("index.html")
@@ -224,28 +244,39 @@ def edit_post(id):
         db.session.commit()
         flash("Post has been updated!")
         return redirect(url_for('posts'))
-    form.title.data=post.title
-    # form.author.data=post.author
-    form.slug.data=post.slug
-    form.content.data=post.content
-    return render_template('edit_post.html', form=form)
+    if current_user.id == post.poster_id:
+        form.title.data=post.title
+        # form.author.data=post.author
+        form.slug.data=post.slug
+        form.content.data=post.content
+        return render_template('edit_post.html', form=form)
+    else:
+        flash("You Aren't Authorized to Edit This Post...")
+        return redirect(url_for('posts'))
 @app.route('/posts/delete/<int:id>')
+@login_required
 def delete_post(id):
     post_to_delete=Posts.query.get_or_404(id)
-    try:
-        db.session.delete(post_to_delete)
-        db.session.commit()
-        #Return a message
-        flash("Blog Post Was Deleted!")
-        #Grab all the posts from the databases:
-        # posts = Posts.query.order_by(Posts.date_posted)
-        # return render_template("posts.html", posts= posts)
+    id = current_user.id
+    #Si la persona coincide con la que creo la publicacion...
+    if id == post_to_delete.poster.id:
+        try:
+            db.session.delete(post_to_delete)
+            db.session.commit()
+            #Return a message
+            flash("Blog Post Was Deleted!")
+            #Grab all the posts from the databases:
+            # posts = Posts.query.order_by(Posts.date_posted)
+            # return render_template("posts.html", posts= posts)
+            return redirect(url_for('posts'))
+        except:  
+            flash("Whoops! There was a problem deleting post")      
+            #Grab all the posts from the databases:
+            posts = Posts.query.order_by(Posts.date_posted)
+            return render_template("posts.html", posts= posts)
+    else:
+        flash("You Aren't Authorized to Delete This Post")
         return redirect(url_for('posts'))
-    except:  
-        flash("Whoops! There was a problem deleting post")      
-        #Grab all the posts from the databases:
-        posts = Posts.query.order_by(Posts.date_posted)
-        return render_template("posts.html", posts= posts)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
