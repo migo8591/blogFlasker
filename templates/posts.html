@@ -23,16 +23,27 @@
     </script>
 </div>
 {% endfor %}
-<h1>Blog Posts...</h1>
-{% for post in posts %}
-<div class="shadow p-3 mb-5 bg-body rounded">
-        <h2><a href="{{url_for('post', id=post.id)}}">{{ post.title}}</a></h2>
-        <small>By: {{ post.author}}</small> <br>
-        <small>{{ post.date_posted}} | {{ post.slug}} </small><br>
-        <p>{{ post.content}}</p>
-        <br>
-
-</div>
+    <h1 id="title">Blog Posts...</h1>
+    {% for post in posts %}
+        <div class="shadow p-3 mb-5 bg-body rounded">
+                <h2><a href="{{url_for('post', id=post.id)}}">{{ post.title}}</a></h2>
+                <small>By: {{ post.poster.name}}</small> <br>
+                <small>{{ post.date_posted}} | {{ post.slug}} </small><br>
+                <p>{{ post.content}}</p>
+                <br>
+        </div>
+    {% else %}
+        <h1>There aren't posts...</h1>
+        {{posts.id}}
+        <script>
+            var myTitle = document.querySelector("#title")
+            myTitle.style.display="none"
+        </script>
     {% endfor%}
+
+
+
+
+
 
 {% endblock %}

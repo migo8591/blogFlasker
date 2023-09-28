@@ -37,9 +37,12 @@
         <strong>Email: </strong>{{current_user.email}}<br>
         <strong>Favorite Color: </strong>{{current_user.favorite_color}}<br>
         <strong>Date Joined :</strong>{{current_user.date_added}}<br>
-    </div>
-    <div class="card-footer text-muted">
-        <a href="{{url_for('logout')}}" class="btn btn-success btn-sm">Logout</a>
+        
+        <div class="mt-2">
+            <a href="{{url_for('logout')}}" class="btn btn-success btn-sm">Logout</a>
+            <a href="{{url_for('update', id=current_user.id)}}" class="btn btn-warning btn-sm">Edit Profile</a>
+            <a href="{{url_for('logout')}}" class="btn btn-danger btn-sm">Delete</a>
+        </div>
     </div>
 </div>
 <br>

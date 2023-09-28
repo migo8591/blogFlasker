@@ -1,11 +1,15 @@
 from flask import Flask, render_template, flash, request, redirect, url_for
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError
+from wtforms.validators import DataRequired, EqualTo, Length
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
+from wtforms.widgets import TextArea
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
-from webforms import LoginForm, PostForm, PasswordForm, NamerForm, UserForm  
+
 db = SQLAlchemy()
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:rebHaraya314@localhost/our_users"
@@ -40,8 +44,6 @@ class Users(db.Model, UserMixin):
     favorite_color=db.Column(db.String(120))
     date_added=db.Column(db.DateTime, default=datetime.utcnow)
     password_hash = db.Column(db.String(120))
-    #User can have many posts
-    posts = db.relationship('Posts', backref='poster')
 
     @property 
     def password(self):
@@ -68,13 +70,37 @@ class Posts(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255))
     content = db.Column(db.Text)
-    #author = db.Column(db.String(255))
+    author = db.Column(db.String(255))
     date_posted = db.Column(db.DateTime, default= datetime.utcnow)
     slug = db.Column(db.String(255))
-    # Foreing key to link Users(refer to primary of the user)
-    poster_id= db.Column(db.Integer, db.ForeignKey('users.id'))
 with app.app_context():
     db.create_all()
+#******************Create a form Class*******************:
+class UserForm(FlaskForm):
+    name=StringField("Name", validators=[DataRequired()])
+    username=StringField("Username", validators=[DataRequired()])
+    email=StringField("Email", validators=[DataRequired()])
+    favorite_color=StringField("Favorite color")
+    password_hash= PasswordField("Password",validators=[DataRequired(), EqualTo('password_hash2', message='Password must mathc!')])
+    password_hash2= PasswordField("Confirm password",validators=[DataRequired()])
+    submit=SubmitField("Submit") 
+class NamerForm(FlaskForm):
+    name=StringField("what's your name", validators=[DataRequired()])
+    submit=SubmitField("Submit") 
+class PasswordForm(FlaskForm):
+    email=StringField("what's your email", validators=[DataRequired()])
+    password_hash=PasswordField("What's your password", validators=[DataRequired()])
+    submit=SubmitField("Submit") 
+class PostForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired()])
+    content = StringField("Content", validators=[DataRequired()], widget=TextArea())
+    author = StringField("Author", validators=[DataRequired()])
+    slug = StringField("Slug", validators=[DataRequired()])
+    submit = SubmitField("Submit")
+class LoginForm(FlaskForm):
+    username = StringField("Username", validators=[DataRequired()])
+    password = PasswordField("Password", validators=[DataRequired()])
+    submit = SubmitField("Submit")
 #****************** Routes *******************:
 @app.route('/')
 def index():
@@ -114,13 +140,11 @@ def add_user():
     our_users=Users.query.order_by(Users.date_added)
     return render_template("add_user.html",form=formulario, name=name, our_users=our_users )
 @app.route('/update/<int:id>', methods=['GET', 'POST'])
-@login_required
 def update(id):
     form = UserForm()
     name_to_update = Users.query.get_or_404(id)
     if request.method == "POST":
         name_to_update.name = request.form['name']
-        name_to_update.username = request.form['username']
         name_to_update.email = request.form['email']
         name_to_update.favorite_color = request.form['favorite_color']
         try:
@@ -133,7 +157,7 @@ def update(id):
             return render_template("update.html", form=form, name_to_update=name_to_update)
     else:
             print(name_to_update)
-            return render_template("update.html", form=form, name_to_update=name_to_update, id=id)
+            return render_template("update.html", form=form, name_to_update=name_to_update, identificator=id)
 @app.route('/delete/<int:id>')
 def delete(id):
     user_to_delete = Users.query.get_or_404(id)
@@ -144,8 +168,7 @@ def delete(id):
         db.session.commit()
         flash("User deleted successfully")
         our_users=Users.query.order_by(Users.date_added)
-        # return render_template("add_user.html",form=formulario, name=name, our_users=our_users )
-        return redirect(url_for('add_user'))
+        return render_template("add_user.html",form=formulario, name=name, our_users=our_users )
     except:
         flash("Whoop! There was a problem deleting user, try again..")
         return render_template("add_user.html",form=formulario, name=name, our_users=our_users )
@@ -180,18 +203,11 @@ def test_pw():
         #Check hashed password
         passed = check_password_hash(pw_to_check.password_hash, password)
     return render_template("test_pw.html", email=email, password = password, pw_to_check=pw_to_check, passed=passed, form=form)
-@app.route("/posts")
-def posts():
-    #Grab all the posts from the databases:
-    posts = Posts.query.order_by(Posts.date_posted)
-    print(posts)
-    return render_template("posts.html", posts = posts)
 @app.route('/add-post', methods=['GET', 'POST'])
 def addPost():
     form = PostForm()
     if form.validate_on_submit():
-        poster = current_user.id
-        post = Posts(title=form.title.data, content=form.content.data, poster_id=poster,slug=form.slug.data)
+        post = Posts(title=form.title.data, content=form.content.data, author=form.author.data,slug=form.slug.data)
         form.title.data = ''
         form.content.data = ''
         form.author.data = ''
@@ -200,10 +216,12 @@ def addPost():
         db.session.add(post)
         db.session.commit()
         flash("Blog Post Submitted Successfully!")
-        posts = Posts.query.order_by(Posts.date_posted)
-        print("Lo que tiene es: ",posts)
-        return redirect(url_for('posts'))
     return render_template("add_post.html", form = form)
+@app.route("/posts")
+def posts():
+    #Grab all the posts from the databases:
+    posts = Posts.query.order_by(Posts.date_posted)
+    return render_template("posts.html", posts= posts)
 @app.route('/posts/<int:id>')
 def post(id):
     post = Posts.query.get_or_404(id)
@@ -238,9 +256,8 @@ def delete_post(id):
         #Return a message
         flash("Blog Post Was Deleted!")
         #Grab all the posts from the databases:
-        # posts = Posts.query.order_by(Posts.date_posted)
-        # return render_template("posts.html", posts= posts)
-        return redirect(url_for('posts'))
+        posts = Posts.query.order_by(Posts.date_posted)
+        return render_template("posts.html", posts= posts)
     except:  
         flash("Whoops! There was a problem deleting post")      
         #Grab all the posts from the databases:
@@ -313,12 +330,3 @@ https://youtube.com/shorts/STtvuH6c_JI?si=pGOKpAUnun9shZkw
         <h4 class="card-title">Wel</h4>
 
 """
-
-#https://www.linkedin.com/learning/diseno-para-programacion-esencial/el-proceso-creativo?autoSkip=true&resume=false
-
-
-#accesibility:
-#hace 3 años aria:
-#https://www.youtube.com/watch?v=38JDscMbB4I&list=PLadWW12WRDFNrIb1jHDWso76xb2m3oLtz&ab_channel=WebAccessibilityEducation
-#What is wai-aria
-#https://www.youtube.com/watch?v=CNoz0TXG-vk

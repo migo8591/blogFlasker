@@ -10,25 +10,23 @@
 </div>
 {% endfor %}
 
-{% if name %}
-    <h1 class="title">Update user!!! </h1>
-    <table class="table table-hover table-bordered table-striped">
-        {% for our_user in our_users %}
-            <tr>
-                <td>
-                    {{ our_user.id}}. {{ our_user.name}} - {{our_user.email}} -{{our_user.favorite_color}}
-                </td>
-            </tr>
-        {% endfor %}
-        </table>
-{% else %}
+
+
+{% if id == current_user.id %}
     <h1>Update user... </h1>
     <br>
-    <div class="shadow p-3 mb-5 bg-body rounded">
+    <br>
+    ID to Update: {{ id }}<br>
+    Current Id: {{current_user.id}}
+    <br>
+    <div class="shadow p-3 mt-3 mb-5 bg-body rounded">
         <form action="" method="POST">
             {{form.hidden_tag()}}
             {{ form.name.label(class="form-label")}}
             {{form.name(class="form-control", value=name_to_update.name)}}
+            <br>
+            {{ form.username.label(class="form-label")}}
+            {{form.username(class="form-control", value=name_to_update.username)}}
             <br>
             {{ form.email.label(class="form-label")}}
             {{form.email(class="form-control", value=name_to_update.email)}}
@@ -37,11 +35,16 @@
             {{form.favorite_color(class="form-control", value=name_to_update.favorite_color)}}
             <br>
             {{form.submit(class="btn btn-primary")}}
-            <a href="{{url_for('delete', id=identificator)}}" class="btn btn-danger">Delete</a>
+            <a href="{{url_for('delete', id=id)}}" class="btn btn-danger">Delete</a>
         </form>
     </div>
+{% else %}
 
-{% endif %}
-
-
+{% endif  %}
+<div class="alert alert-success alert-dismissible fade show" role="alert" id="flash-message">
+    Sorry! You Can't Edit This User...
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<h2>Sorry, you cannot access this user profile...</h2>
 {% endblock %}
+<!-- https://www.facebook.com/reel/1006838567330622 -->
