@@ -2,3 +2,4 @@ instance
 .env
 virt
 __pycache__
+app.js
