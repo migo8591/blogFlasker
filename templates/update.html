@@ -20,7 +20,7 @@
     Current Id: {{current_user.id}}
     <br>
     <div class="shadow p-3 mt-3 mb-5 bg-body rounded">
-        <form action="" method="POST">
+        <form action="" method="POST" enctype="multipart/form-data">
             {{form.hidden_tag()}}
             {{ form.name.label(class="form-label")}}
             {{form.name(class="form-control", value=name_to_update.name)}}
@@ -34,17 +34,21 @@
             {{ form.favorite_color.label(class="form-label")}}
             {{form.favorite_color(class="form-control", value=name_to_update.favorite_color)}}
             <br>
+            {{ form.about_me.label(class="form-label")}}<br>
+            <!-- {{form.about_me(class="form-control", value=name_to_update.about_me)}} -->
+            <!-- <textarea name="abot_author" cols="120" rows="5">{{form.about_me}}</textarea> -->
+            <textarea name="about_me" class="form-control" rows="3">{{name_to_update.about_me}}</textarea>
+            <br>
+            {{ form.profile_pic.label(class="form-label")}}
+            {{form.profile_pic(class="form-control", value=name_to_update.profile_pic)}}
+            <br>
             {{form.submit(class="btn btn-primary")}}
-            <a href="{{url_for('delete', id=id)}}" class="btn btn-danger">Delete</a>
+            <a href="{{url_for('delete', id=id)}}" class="btn btn-danger" >Delete</a>
         </form>
     </div>
 {% else %}
 
 {% endif  %}
-<div class="alert alert-success alert-dismissible fade show" role="alert" id="flash-message">
-    Sorry! You Can't Edit This User...
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
-<h2>Sorry, you cannot access this user profile...</h2>
+
 {% endblock %}
 <!-- https://www.facebook.com/reel/1006838567330622 -->

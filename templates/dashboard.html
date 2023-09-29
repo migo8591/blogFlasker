@@ -30,19 +30,30 @@
         <strong>Name: </strong>{{current_user.name}}<br>
     </div>
     <div class="card-body">
-        <h4 class="card-title">Welcome To Your User Dashboard... </h4>
-        <!-- <p class="card-text">Text</p> -->
-        <strong>Username: </strong>{{current_user.username}}<br>
-        <strong>User Id: </strong>{{current_user.id}}<br>
-        <strong>Email: </strong>{{current_user.email}}<br>
-        <strong>Favorite Color: </strong>{{current_user.favorite_color}}<br>
-        <strong>Date Joined :</strong>{{current_user.date_added}}<br>
-        
-        <div class="mt-2">
-            <a href="{{url_for('logout')}}" class="btn btn-success btn-sm">Logout</a>
-            <a href="{{url_for('update', id=current_user.id)}}" class="btn btn-warning btn-sm">Edit Profile</a>
-            <a href="{{url_for('logout')}}" class="btn btn-danger btn-sm">Delete</a>
+        <div class="container">
+            <div class="row">
+                <div class="col-8">
+                    <strong>Username: </strong>{{current_user.username}}<br>
+                    <strong>User Id: </strong>{{current_user.id}}<br>
+                    <strong>Email: </strong>{{current_user.email}}<br>
+                    <strong>Favorite Color: </strong>{{current_user.favorite_color}}<br>
+                    <strong>Date Joined: </strong>{{current_user.date_added}}<br>
+                    <strong>About me: </strong>{{current_user.about_me}}<br>
+                    <strong>Profile Pic: </strong>{{current_user.profile_pic}}<br>
+                    
+                    <div class="mt-2">
+                        <a href="{{url_for('logout')}}" class="btn btn-success btn-sm">Logout</a>
+                        <a href="{{url_for('update', id=current_user.id)}}" class="btn btn-warning btn-sm">Edit Profile</a>
+                        <a href="{{url_for('logout')}}" class="btn btn-danger btn-sm">Delete</a>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <img src="{{url_for('static', filename='images/picture.png')}}" alt="foto del perfil" width="200" align="right" >
+                </div>
+            </div>
         </div>
+        <!-- <p class="card-text">Text</p> -->
+
     </div>
 </div>
 <br>

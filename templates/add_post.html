@@ -28,7 +28,7 @@
 {% if current_user.is_authenticated %}
 <h1>Add Blog Post</h1>
 <br>
-<div class="shadow p-3 mb-5 bg-body rounded">
+<div class="shadow h-40 p-3 mb-5 bg-body rounded post">
     <form action="" method="POST">
         {{form.hidden_tag()}}
         {{ form.title.label(class="form-label")}}
@@ -38,12 +38,13 @@
         {{form.slug(class="form-control")}}
         <br>
         {{ form.content.label(class="form-label")}}
-        {{form.content(class="form-control", rows="5")}}
+        {{form.content(id="editor", class="form-control")}}
         <br>
+        
         {{form.submit(class="btn btn-primary")}}
     </form>
     {{ ckeditor.load() }}
-    {{ ckeditor.config(name='content')}}
+    {{ ckeditor.config(name='content', row=5)}}
 </div>
 {% else %}
 <h2>Must Be Logged In...</h2>

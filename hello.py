@@ -7,12 +7,17 @@ from datetime import date
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from webforms import LoginForm, PostForm, PasswordForm, NamerForm, UserForm, SearchForm 
 from flask_ckeditor import CKEditor
+from werkzeug.utils import secure_filename
+import uuid as uuid
+import os
 
 db = SQLAlchemy()
 app = Flask(__name__)
 ckeditor = CKEditor(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql://root:rebHaraya314@localhost/our_users"
 app.config['SECRET_KEY']="mySuperSecretKey"
+UPLOAD_FOLDER = 'static/profiles/'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 db.init_app(app)
 migrate = Migrate(app, db)
 # Flask_Login Stuff
@@ -41,6 +46,8 @@ class Users(db.Model, UserMixin):
     name=db.Column(db.String(200), nullable=False)
     email=db.Column(db.String(120), nullable=False, unique=True)
     favorite_color=db.Column(db.String(120))
+    about_me=db.Column(db.Text(500), nullable=True)
+    profile_pic=db.Column(db.String(120), nullable=True)
     date_added=db.Column(db.DateTime, default=datetime.utcnow)
     password_hash = db.Column(db.String(120))
     #User can have many posts
@@ -152,8 +159,20 @@ def update(id):
         name_to_update.username = request.form['username']
         name_to_update.email = request.form['email']
         name_to_update.favorite_color = request.form['favorite_color']
+        name_to_update.about_me = request.form['about_me']
+        # ******* Se esta ingresando la imagen real *******
+        name_to_update.profile_pic = request.files['profile_pic']
+        # Grab Image Name 
+        pic_filename = secure_filename(name_to_update.profile_pic.filename)
+        # Set UUID
+        pic_name = str(uuid.uuid1())+"_"+pic_filename
+        #Save that image
+        saver = request.files['profile_pic']
+        #Change it to a string to save to db
+        name_to_update.profile_pic = pic_name
         try:
             db.session.commit()
+            saver.save(os.path.join(app.config['UPLOAD_FOLDER']), pic_name)
             flash("User update successfully")
             # return render_template("add_user.html", form=form, name_to_update=name_to_update)
             return redirect(url_for("dashboard"))
